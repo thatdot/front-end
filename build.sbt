@@ -5,6 +5,9 @@ ThisBuild / version          := "0.1.0-SNAPSHOT"
 ThisBuild / organization     := "com.thatdot"
 ThisBuild / organizationName := "quine"
 
+javacOptions := Seq("-source", "11", "-target", "11")
+compileOrder := CompileOrder.JavaThenScala
+
 libraryDependencies += "org.antlr" % "antlr4" % "4.9.2"
 libraryDependencies += "org.typelevel" %% "cats-effect" % "3.5.0"
 
@@ -20,5 +23,7 @@ lazy val root = (project in file("."))
     name := "query-language",
     libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j" % "0.21.1",
     libraryDependencies += "org.typelevel" %% "cats-parse" % "0.3.7",
-    libraryDependencies += munit % Test
+    libraryDependencies += munit % Test,
+    publishMavenStyle := false,
+    publishTo := Some(Resolver.url("FrugalMechanic Snapshots", url("s3://com.thatdot.dependencies/"))(Resolver.ivyStylePatterns))
   )

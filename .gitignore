@@ -1,2 +1,7 @@
 /.bsp/
 target/
+.idea/
+project/.bloop
+project/project/
+data/
+project/metals.sbt
