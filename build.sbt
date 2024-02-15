@@ -1,11 +1,11 @@
 import Dependencies._
 
-ThisBuild / scalaVersion     := "2.12.18"
-ThisBuild / version          := "0.1.0-SNAPSHOT"
+ThisBuild / scalaVersion     := "2.13.12" // Replace x with the minor version you're targeting
+ThisBuild / version          := "0.1.1-SNAPSHOT"
 ThisBuild / organization     := "com.thatdot"
 ThisBuild / organizationName := "quine"
 
-javacOptions := Seq("-source", "11", "-target", "11")
+javacOptions := Seq("-source", "16", "-target", "16")
 compileOrder := CompileOrder.JavaThenScala
 
 libraryDependencies += "org.antlr" % "antlr4" % "4.9.2"
