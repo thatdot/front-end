@@ -3,9 +3,9 @@
                       http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>com.thatdot</groupId>
-  <artifactId>front-end-parent-9.1.1</artifactId>
-  <version>9.1.1</version>
+  <groupId>com.thatdot.opencypher</groupId>
+  <artifactId>front-end-parent</artifactId>
+  <version>9.1.2</version>
   <packaging>pom</packaging>
   <name>openCypher Front End Parent</name>
   <description>Project that builds the openCypher front end modules</description>
@@ -279,7 +279,7 @@
         </executions>
         <dependencies>
           <dependency>
-            <groupId>com.thatdot</groupId>
+            <groupId>com.thatdot.opencypher</groupId>
             <artifactId>licensing-config</artifactId>
             <version>${project.version}</version>
           </dependency>

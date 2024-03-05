@@ -24,14 +24,7 @@ Apache Software License, Version 2.0
   openCypher Expressions
   openCypher Utils
   Scala Compiler
-  scala-xml
-  scalactic
-  scalatest
 
 BSD - Scala License
   Scala Library
-
-BSD License
-  scalacheck
-  test-interface
 
