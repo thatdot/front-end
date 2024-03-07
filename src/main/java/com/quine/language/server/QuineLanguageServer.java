@@ -9,6 +9,13 @@ import org.eclipse.lsp4j.services.WorkspaceService;
 import java.util.concurrent.CompletableFuture;
 
 public class QuineLanguageServer implements LanguageServer {
+
+    private ContextAwareLanguageService cals;
+
+    public QuineLanguageServer() {
+        this.cals = new ContextAwareLanguageService();
+    }
+
     @Override
     public CompletableFuture<InitializeResult> initialize(InitializeParams params) {
         return null;
@@ -26,7 +33,7 @@ public class QuineLanguageServer implements LanguageServer {
 
     @Override
     public TextDocumentService getTextDocumentService() {
-        return new QuineTextDocumentService();
+        return new QuineTextDocumentService(cals);
     }
 
     @Override

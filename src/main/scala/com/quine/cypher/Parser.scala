@@ -14,9 +14,10 @@ protected class Parser(rewriters: List[Rewriter]) {
   }
 
   private def rewriteQuery(q: Query, r: Rewriter): Query = q match {
-    case Query.Union(lhs, rhs) => Query.Union(rewriteQuery(lhs, r), rewriteQuery(rhs, r))
-    case Query.Single(predicate, effects, maybeProjection) =>
+    case Query.Union(source, lhs, rhs) => Query.Union(source, rewriteQuery(lhs, r), rewriteQuery(rhs, r))
+    case Query.Single(source, predicate, effects, maybeProjection) =>
       Query.Single(
+        source,
         r.rewrite(predicate),
         effects.map {
           case Effect.Set(lhs, rhs) => Effect.Set(BooleanExpressionRewriter.rewrite(lhs), BooleanExpressionRewriter.rewrite(rhs))
@@ -27,14 +28,27 @@ protected class Parser(rewriters: List[Rewriter]) {
     case Query.Empty => Query.Empty
   }
 
-  def parseCypher(cypherText: String): Query = {
+  def parseCypher(cypherText: String): Either[List[ParseError], Query] = {
+    val errorListener = new CollectingErrorListener
+
     val input = CharStreams.fromString(cypherText)
     val lexer = new CypherLexer(input)
+
     val tokens = new CommonTokenStream(lexer)
     val parser = new CypherParser(tokens)
+
+    lexer.removeErrorListeners()
+    parser.removeErrorListeners()
+
+    lexer.addErrorListener(errorListener)
+    parser.addErrorListener(errorListener)
+
     val tree = parser.oC_Query()
 
-    val syntaxTree = QueryVisitor.visitOC_Query(tree)
-    rewriters.foldRight(syntaxTree)((r, q) => rewriteQuery(q, r))
+    val maybeSyntaxTree = QueryVisitor.visitOC_Query(tree)
+    maybeSyntaxTree.map(syntaxTree => rewriters.foldRight(syntaxTree)((r, q) => rewriteQuery(q, r))) match {
+      case Some(q) => Right(q)
+      case None => Left(errorListener.errors.toList)
+    }
   }
 }

@@ -2,7 +2,7 @@ package com.quine.cypher.visitors.expressions
 
 import com.quine.cypher.parsing.CypherParser.OC_UnaryAddOrSubtractExpressionContext
 import com.quine.cypher.parsing.{CypherBaseVisitor, CypherParser}
-import com.quine.language.ast.{Expression, Operator}
+import com.quine.language.ast.{Expression, Operator, Source}
 import org.antlr.v4.runtime.tree.TerminalNode
 
 import scala.collection.JavaConverters._
@@ -23,12 +23,10 @@ object PowerOfVisitor extends CypherBaseVisitor[Expression] {
 
     val (init, rexps) = exps.dequeue
 
-    val (exp, _) = ops.foldLeft(init -> rexps) {
+    ops.foldLeft(init -> rexps) {
       case ((e1, rem), op) =>
         val (e2, r2) = rem.dequeue
-        Expression.BinOp(op, e1, e2) -> r2
-    }
-
-    exp
+        Expression.BinOp(Source.NoSource, op, e1, e2) -> r2
+    }._1
   }
 }

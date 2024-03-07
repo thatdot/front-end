@@ -5,11 +5,10 @@ ThisBuild / version          := "0.1.1-SNAPSHOT"
 ThisBuild / organization     := "com.thatdot"
 ThisBuild / organizationName := "quine"
 
-javacOptions := Seq("-source", "16", "-target", "16")
-compileOrder := CompileOrder.JavaThenScala
+javacOptions := Seq("-source", "11", "-target", "11")
 
 libraryDependencies += "org.antlr" % "antlr4" % "4.9.2"
-libraryDependencies += "org.typelevel" %% "cats-effect" % "3.5.0"
+libraryDependencies += "org.typelevel" %% "cats-effect" % "3.5.3"
 
 enablePlugins(Antlr4Plugin)
 
@@ -24,6 +23,6 @@ lazy val root = (project in file("."))
     libraryDependencies += "org.eclipse.lsp4j" % "org.eclipse.lsp4j" % "0.21.1",
     libraryDependencies += "org.typelevel" %% "cats-parse" % "0.3.7",
     libraryDependencies += munit % Test,
-    publishMavenStyle := false,
+    publishMavenStyle := true,
     publishTo := Some(Resolver.url("FrugalMechanic Snapshots", url("s3://com.thatdot.dependencies/"))(Resolver.ivyStylePatterns))
   )

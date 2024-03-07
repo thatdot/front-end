@@ -17,7 +17,6 @@ import java.util.concurrent.Future;
 
 public class TestClientServer {
     public static void main(String[] args) {
-        System.out.println("Hello, world!");
         try {
             PipedInputStream inClient = new PipedInputStream();
             PipedOutputStream outClient = new PipedOutputStream();
@@ -35,8 +34,23 @@ public class TestClientServer {
             Launcher<LanguageServer> clientLauncher = LSPLauncher.createClientLauncher(client, inClient, outClient);
             Future<Void> clientListening = clientLauncher.startListening();
 
+            TextDocumentItem tdi = new TextDocumentItem();
+            tdi.setText("MATCH (n)-[:]->(m) RETURN n.x, m.y");
+
+            DidOpenTextDocumentParams dotdp = new DidOpenTextDocumentParams();
+            dotdp.setTextDocument(tdi);
+
+            clientLauncher.getRemoteProxy().getTextDocumentService().didOpen(dotdp);
+
+            DocumentDiagnosticParams ddp = new DocumentDiagnosticParams();
+            ddp.setTextDocument(new TextDocumentIdentifier("data/query1.quine"));
+
+            CompletableFuture<DocumentDiagnosticReport> diagnosticsFuture = clientLauncher.getRemoteProxy().getTextDocumentService().diagnostic(ddp);
+
+            System.out.println(diagnosticsFuture.join());
+
             CompletionParams p = new CompletionParams();
-            p.setPosition(new Position(1, 1));
+            p.setPosition(new Position(1, 13));
             p.setTextDocument(new TextDocumentIdentifier("data/query1.quine"));
 
             CompletableFuture<Either<List<CompletionItem>, CompletionList>> future = clientLauncher.getRemoteProxy().getTextDocumentService().completion(p);

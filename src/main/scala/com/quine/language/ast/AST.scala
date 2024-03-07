@@ -1,5 +1,15 @@
 package com.quine.language.ast
 
+import java.util.UUID
+
+sealed trait Source
+
+object Source {
+    case class TextSource(start: Int, end: Int, text: String) extends Source
+    case object NoSource extends Source
+}
+
+
 sealed trait Operator
 
 object Operator {
@@ -26,32 +36,40 @@ object Value {
     case class Text(str: String) extends Value
 }
 
-sealed trait Expression
-
-object Expression {
-    case class Literal(value: Value) extends Expression
-    case class Ident(name: Symbol) extends Expression
-    case class Parameter(name: Symbol) extends Expression
-    case class Apply(name: Symbol, args: List[Expression]) extends Expression
-    case class UnaryOp(op: Operator, exp: Expression) extends Expression
-    case class BinOp(op: Operator, lhs: Expression, rhs: Expression) extends Expression
-
-    def mkLiteral(value: Value): Expression = Literal(value)
+sealed trait Expression {
+    val source: Source
 }
 
-sealed trait Predicate
+object Expression {
+    case class Literal(source: Source, value: Value) extends Expression
+    case class Ident(source: Source, name: Symbol) extends Expression
+    case class Parameter(source: Source, name: Symbol) extends Expression
+    case class Apply(source: Source, name: Symbol, args: List[Expression]) extends Expression
+    case class UnaryOp(source: Source, op: Operator, exp: Expression) extends Expression
+    case class BinOp(source: Source, op: Operator, lhs: Expression, rhs: Expression) extends Expression
+
+    def mkLiteral(source: Source, value: Value): Expression = Literal(source, value)
+}
+
+sealed trait Predicate {
+    val source: Source
+}
 
 object Predicate {
-    case class ExistsNode(binding: Symbol, labels: List[Symbol]) extends Predicate
-    case class ExistsEdge(name: Symbol, labels: List[Symbol], sourceNode: Symbol, destNode: Symbol) extends Predicate
-    case class ExistsPath(name: Symbol, sourceNode: Symbol, destNode: Symbol) extends Predicate
+    case class ExistsNode(source: Source, binding: Symbol, labels: List[Symbol]) extends Predicate
+    case class ExistsEdge(source: Source, name: Symbol, labels: List[Symbol], sourceNode: Symbol, destNode: Symbol) extends Predicate
+    case class ExistsPath(source: Source, name: Symbol, sourceNode: Symbol, destNode: Symbol) extends Predicate
 
-    case class And(lhs: Predicate, rhs: Predicate) extends Predicate
-    case class Or(lhs: Predicate, rhs: Predicate) extends Predicate
-    case object True extends Predicate
-    case object False extends Predicate
+    case class And(source: Source, lhs: Predicate, rhs: Predicate) extends Predicate
+    case class Or(source: Source, lhs: Predicate, rhs: Predicate) extends Predicate
+    case object True extends Predicate {
+        val source: Source = Source.NoSource
+    }
+    case object False extends Predicate {
+        val source: Source = Source.NoSource
+    }
 
-    case class Satisfies(pexp: Expression) extends Predicate
+    case class Satisfies(source: Source, pexp: Expression) extends Predicate
 
     def sat: Predicate = True
 }
@@ -70,12 +88,16 @@ object Effect {
     case class Create(patternText: String) extends Effect
 }
 
-sealed trait Query
+sealed trait Query {
+    val source: Source
+}
 
 object Query {
-    case class Union(lhs: Query, rhs: Query) extends Query
-    case class Single(predicate: Predicate, effects: List[Effect], maybeProjection: Option[Projection]) extends Query
-    case object Empty extends Query
+    case class Union(source: Source, lhs: Query, rhs: Query) extends Query
+    case class Single(source: Source, predicate: Predicate, effects: List[Effect], maybeProjection: Option[Projection]) extends Query
+    case object Empty extends Query {
+        val source: Source = Source.NoSource
+    }
 
     def empty: Query = Empty
 }
