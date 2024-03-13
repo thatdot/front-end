@@ -1,7 +1,7 @@
 import Dependencies._
 
 ThisBuild / scalaVersion     := "2.13.12" // Replace x with the minor version you're targeting
-ThisBuild / version          := "0.1.1-SNAPSHOT"
+ThisBuild / version          := "0.1.1"
 ThisBuild / organization     := "com.thatdot"
 ThisBuild / organizationName := "quine"
 
@@ -24,5 +24,5 @@ lazy val root = (project in file("."))
     libraryDependencies += "org.typelevel" %% "cats-parse" % "0.3.7",
     libraryDependencies += munit % Test,
     publishMavenStyle := true,
-    publishTo := Some(Resolver.url("FrugalMechanic Snapshots", url("s3://com.thatdot.dependencies/"))(Resolver.ivyStylePatterns))
+    publishTo := Some(Resolver.url("thatDot dependency bucket", url("s3://com.thatdot.dependencies/release/"))(Resolver.mavenStylePatterns))
   )
