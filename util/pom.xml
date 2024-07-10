@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <parent>
-    <groupId>com.thatdot</groupId>
-    <artifactId>front-end-parent-9.2.0</artifactId>
+    <groupId>com.thatdot.opencypher</groupId>
+    <artifactId>front-end-parent</artifactId>
     <version>9.2.0</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>util-9.2.0_2.13</artifactId>
+  <artifactId>util_2.13</artifactId>
   <packaging>jar</packaging>
   <version>9.2.0</version>
   <name>openCypher Utils</name>
@@ -64,7 +64,7 @@
 
     <dependency>
       <groupId>com.thatdot</groupId>
-      <artifactId>test-util-9.2.0_${scala.binary.version}</artifactId>
+      <artifactId>test-util_${scala.binary.version}</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
     </dependency>

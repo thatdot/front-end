@@ -28,3 +28,7 @@ Thumbs.db
 .cache-tests
 /.profiler/
 dependency-reduced-pom.xml
+
+# vim stuff
+*.swp
+*.swo
