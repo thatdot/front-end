@@ -4,7 +4,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>com.thatdot.opencypher</groupId>
-  <artifactId>front-end-parent-9.2.0</artifactId>
+  <artifactId>front-end-parent</artifactId>
   <version>9.2.0</version>
   <packaging>pom</packaging>
   <name>openCypher Front End Parent</name>
