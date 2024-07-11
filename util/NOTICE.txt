@@ -18,7 +18,35 @@ Third-party licenses
 
 Apache Software License, Version 2.0
   Apache Commons Lang
+  openCypher TCK API
+  openCypher TCK Features and Graphs
+  openCypher Test Utils
+  org.apiguardian:apiguardian-api
+  org.opentest4j:opentest4j
+  scala-collection-compat
 
 BSD - Scala License
   Scala Library
+
+Eclipse Public License - v 1.0
+  JUnit
+
+Eclipse Public License v2.0
+  JUnit Jupiter API
+  JUnit Platform Commons
+  JUnit Platform Engine API
+  JUnit Vintage Engine
+
+MIT License
+  Cucumber Expressions
+  Cucumber Tag Expressions
+  Cucumber-JVM: Core
+  Cucumber-JVM: Docstring
+  Cucumber-JVM: Gherkin
+  Cucumber-JVM: Gherkin Vintage
+  Cucumber-JVM: Plugin
+  DataTable
+  fastparse_2.13
+  geny_2.13
+  sourcecode_2.13
 
