@@ -35,7 +35,7 @@ class CypherTransactionsParserTest extends JavaccParserAstTestBase[Clause] with 
           ))
         )(defaultPos),
         Nil,
-        null,
+        trueLiteral,
         Some(InTransactionsParameters(None)((1, 21, 20)))
       )(defaultPos)
 

@@ -543,6 +543,7 @@ TOKEN [IGNORE_CASE] :
     | < TYPES: "TYPES">
     | < UNION: "UNION" >
     | < UNIQUE: "UNIQUE" >
+    | < UNTIL: "UNTIL" >
     | < UNWIND: "UNWIND" >
     | < USE: "USE" >
     | < USER: "USER">
@@ -1591,7 +1592,7 @@ CLAUSE Clause() :
         | x=MergeClause()
         | x=WithClause()
         | x=UnwindClause()
-        | LOOKAHEAD(2) x=RecursiveSubqueryClause()
+        | LOOKAHEAD(3) x=RecursiveSubqueryClause()
         | LOOKAHEAD(2) x=CallClause() // because subqueries also start with CALL
         | x=SubqueryClause()
         | x=LoadCSVClause()
@@ -2071,7 +2072,7 @@ CLAUSE SubqueryClause() :
     <RCURLY>
     ( inTransactionsParams = SubqueryInTransactionsParameters() )?
     {
-        return astFactory.subqueryClause( pos( t ), null, null, q, inTransactionsParams );
+        return astFactory.subqueryClause( pos( t ), new ArrayList<INITIALIZATION>(), astFactory.newTrueLiteral( pos(t) ), q, inTransactionsParams );
     }
 }
 
@@ -2079,23 +2080,24 @@ CLAUSE RecursiveSubqueryClause() :
 {
     Token t;
     QUERY q;
-    VARIABLE lhs;
-    EXPRESSION rhs;
+    VARIABLE v;
+    EXPRESSION e;
     List<INITIALIZATION> initializations = new ArrayList<>();
     EXPRESSION test;
     SUBQUERY_IN_TRANSACTIONS_PARAMETERS inTransactionsParams = null;
 }
 {
-    t=<CALL> <RECURSIVELY>
+    t=<CALL>
+    <RECURSIVELY>
+    <WITH>
+    e=Expression() <AS> v=Variable()  { initializations.add(astFactory.initialization(pos(t), v, e)); }
+    ( "," e=Expression() <AS> v=Variable() { initializations.add(astFactory.initialization(pos(t), v, e )); } )*
+    <UNTIL>
     <LPAREN>
-    lhs=Variable() <EQ> rhs=Expression() { initializations.add(astFactory.initialization(pos(t), lhs, rhs)); }
-    ( "," lhs=Variable() <EQ> rhs=Expression() { initializations.add(astFactory.initialization(pos(t), lhs, rhs )); } )*
-    <RPAREN>
-    <LPAREN>
-        test=Expression()
+    test=Expression()
     <RPAREN>
     <LCURLY>
-        q=RegularQuery()
+    q=RegularQuery()
     <RCURLY>
     ( inTransactionsParams = SubqueryInTransactionsParameters() )?
     {

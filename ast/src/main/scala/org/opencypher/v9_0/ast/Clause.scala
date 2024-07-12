@@ -87,18 +87,7 @@ import org.opencypher.v9_0.util.Foldable.SkipChildren
 import org.opencypher.v9_0.util.Foldable.TraverseChildren
 import org.opencypher.v9_0.util.InputPosition
 import org.opencypher.v9_0.util.helpers.StringHelper.RichString
-import org.opencypher.v9_0.util.symbols.CTAny
-import org.opencypher.v9_0.util.symbols.CTBoolean
-import org.opencypher.v9_0.util.symbols.CTDuration
-import org.opencypher.v9_0.util.symbols.CTFloat
-import org.opencypher.v9_0.util.symbols.CTInteger
-import org.opencypher.v9_0.util.symbols.CTList
-import org.opencypher.v9_0.util.symbols.CTMap
-import org.opencypher.v9_0.util.symbols.CTNode
-import org.opencypher.v9_0.util.symbols.CTPath
-import org.opencypher.v9_0.util.symbols.CTRelationship
-import org.opencypher.v9_0.util.symbols.CTString
-import org.opencypher.v9_0.util.symbols.CypherType
+import org.opencypher.v9_0.util.symbols.{CTAny, CTBoolean, CTDuration, CTFloat, CTInteger, CTList, CTMap, CTNode, CTPath, CTRelationship, CTString, CypherType, TypeSpec}
 
 sealed trait Clause extends ASTNode with SemanticCheckable {
   def name: String
@@ -1553,11 +1542,19 @@ case class SubqueryCall(part: QueryPart, initializations: List[Initialization], 
       outerStateWithImports <- part.checkImportingWith
       // Create empty scope under root
       _ <- SemanticCheck.setState(outerStateWithImports.state.newBaseScope)
+      _ <- this.initializations.foldSemanticCheck { i =>
+        SemanticCheck.fromState { s =>
+          s.declareVariable(i.variable, CTAny.covariant) match {
+            case Right(s1) => SemanticCheck.setState(s1)
+          }
+        }
+      }
       // Check inner query. Allow it to import from outer scope
       innerChecked <- part.semanticCheckInSubqueryContext(outerStateWithImports.state)
       _ <- returnToOuterScope(outerStateWithImports.state.currentScope)
       // Declare variables that are in output from subquery
       merged <- declareOutputVariablesInOuterScope(innerChecked.state.currentScope.scope)
+      _      <- SemanticExpressionCheck.check(Expression.SemanticContext.Results, this.test)
     } yield {
       val importingWithErrors = outerStateWithImports.errors
 

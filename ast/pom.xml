@@ -3,14 +3,14 @@
   <parent>
     <groupId>com.thatdot.opencypher</groupId>
     <artifactId>front-end-parent</artifactId>
-    <version>9.2.0</version>
+    <version>9.2.1</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
 
   <modelVersion>4.0.0</modelVersion>
   <artifactId>ast_2.13</artifactId>
   <packaging>jar</packaging>
-  <version>9.2.0</version>
+  <version>9.2.1</version>
   <name>openCypher AST for the Cypher Query Language</name>
 
   <description>Abstract Syntax Tree and semantic analysis for the Cypher query language</description>

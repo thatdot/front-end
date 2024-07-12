@@ -158,7 +158,7 @@ case class SingleQuery(clauses: Seq[Clause])(val position: InputPosition) extend
   override def semanticCheckInSubqueryContext(outer: SemanticState): SemanticCheck = {
     def importVariables: SemanticCheck =
       importWith.foldSemanticCheck(wth =>
-        wth.semanticCheckContinuation(outer.currentScope.scope) chain
+        wth.semanticCheckContinuation(outer.currentScope.scope, None) chain
           recordCurrentScope(wth)
       )
 

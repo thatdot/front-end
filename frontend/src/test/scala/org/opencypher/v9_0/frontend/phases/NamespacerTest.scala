@@ -224,6 +224,17 @@ class NamespacerTest extends CypherFunSuite with AstConstructionTestSupport with
     }
   }
 
+  test("should understand recursive variable refs") {
+    val query =
+      """CALL RECURSIVELY WITH 0 as x UNTIL (x > 3) {
+        |  RETURN x + 1 AS x
+        |}
+        |RETURN x
+        |""".stripMargin
+
+    assertRewritten(query, "CALL RECURSIVELY WITH 0 AS `  x@0` UNTIL (x > 3) { RETURN `  x@0` + 1 AS `  x@1` } RETURN `  x@1`", Nil)
+  }
+
   override def rewriterPhaseUnderTest: Phase[BaseContext, BaseState, BaseState] = Namespacer
 
   sealed trait Test

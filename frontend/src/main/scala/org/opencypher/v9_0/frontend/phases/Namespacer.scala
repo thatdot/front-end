@@ -15,12 +15,7 @@
  */
 package org.opencypher.v9_0.frontend.phases
 
-import org.opencypher.v9_0.ast.ProcedureResultItem
-import org.opencypher.v9_0.ast.ProjectingUnionAll
-import org.opencypher.v9_0.ast.ProjectingUnionDistinct
-import org.opencypher.v9_0.ast.Statement
-import org.opencypher.v9_0.ast.UnionAll
-import org.opencypher.v9_0.ast.UnionDistinct
+import org.opencypher.v9_0.ast.{ProcedureResultItem, ProjectingUnionAll, ProjectingUnionDistinct, Statement, SubqueryCall, UnionAll, UnionDistinct}
 import org.opencypher.v9_0.ast.semantics.Scope
 import org.opencypher.v9_0.ast.semantics.SemanticFeature
 import org.opencypher.v9_0.ast.semantics.SymbolUse
@@ -33,14 +28,8 @@ import org.opencypher.v9_0.frontend.phases.CompilationPhaseTracer.CompilationPha
 import org.opencypher.v9_0.frontend.phases.factories.PlanPipelineTransformerFactory
 import org.opencypher.v9_0.rewriting.conditions.SemanticInfoAvailable
 import org.opencypher.v9_0.rewriting.conditions.containsNoNodesOfType
-import org.opencypher.v9_0.util.AnonymousVariableNameGenerator
-import org.opencypher.v9_0.util.Foldable.TraverseChildren
-import org.opencypher.v9_0.util.Ref
-import org.opencypher.v9_0.util.Rewriter
-import org.opencypher.v9_0.util.StepSequencer
-import org.opencypher.v9_0.util.bottomUp
-import org.opencypher.v9_0.util.inSequence
-import org.opencypher.v9_0.util.topDown
+import org.opencypher.v9_0.util.{AnonymousVariableNameGenerator, Foldable, Ref, Rewriter, StepSequencer, bottomUp, inSequence, topDown}
+import org.opencypher.v9_0.util.Foldable.{SkipChildren, TraverseChildren}
 
 import scala.collection.mutable
 
@@ -62,6 +51,7 @@ case object Namespacer extends Phase[BaseContext, BaseState, BaseState] with Ste
     val ambiguousNames = shadowedNames(from.semantics().scopeTree)
 
     val variableDefinitions: Map[SymbolUse, SymbolUse] = from.semantics().scopeTree.allVariableDefinitions
+
     val renamings =
       variableRenamings(withProjectedUnions, variableDefinitions, ambiguousNames, from.anonymousVariableNameGenerator)
 
@@ -95,7 +85,6 @@ case object Namespacer extends Phase[BaseContext, BaseState, BaseState] with Ste
       variable: LogicalVariable,
       anonymousVariableNameGenerator: AnonymousVariableNameGenerator
     ): (Ref[LogicalVariable], LogicalVariable) = {
-
       /**
        * Generate a unique anonymous name.
        *
@@ -117,7 +106,11 @@ case object Namespacer extends Phase[BaseContext, BaseState, BaseState] with Ste
       Ref(variable) -> newVariable
     }
 
-    statement.folder.treeFold(Map.empty[Ref[LogicalVariable], LogicalVariable]) {
+    type ACC = Map[Ref[LogicalVariable], LogicalVariable]
+
+    def pf: PartialFunction[Any, ACC => Foldable.FoldingBehavior[ACC]] = {
+      case sq: SubqueryCall =>
+        acc => SkipChildren(sq.initializations.foldLeft(sq.part.folder.treeFold(acc)(pf))((result, init) => result + createVariableRenaming(init.variable, anonymousVariableNameGenerator)))
       case i: LogicalVariable if ambiguousNames(i.name) =>
         val renaming = createVariableRenaming(i, anonymousVariableNameGenerator)
         acc => TraverseChildren(acc + renaming)
@@ -129,6 +122,8 @@ case object Namespacer extends Phase[BaseContext, BaseState, BaseState] with Ste
           }
         acc => TraverseChildren(acc ++ renamings)
     }
+
+    statement.folder.treeFold(Map.empty[Ref[LogicalVariable], LogicalVariable])(pf)
   }
 
   def projectUnions: Rewriter = {
