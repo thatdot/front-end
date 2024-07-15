@@ -232,7 +232,7 @@ class NamespacerTest extends CypherFunSuite with AstConstructionTestSupport with
         |RETURN x
         |""".stripMargin
 
-    assertRewritten(query, "CALL RECURSIVELY WITH 0 AS `  x@0` UNTIL (x > 3) { RETURN `  x@0` + 1 AS `  x@1` } RETURN `  x@1`", Nil)
+    assertRewritten(query, "CALL RECURSIVELY WITH 0 AS `  x@0` UNTIL (`  x@0` > 3) { RETURN `  x@0` + 1 AS `  x@1` } RETURN `  x@1`", Nil)
   }
 
   override def rewriterPhaseUnderTest: Phase[BaseContext, BaseState, BaseState] = Namespacer

@@ -109,8 +109,16 @@ case object Namespacer extends Phase[BaseContext, BaseState, BaseState] with Ste
     type ACC = Map[Ref[LogicalVariable], LogicalVariable]
 
     def pf: PartialFunction[Any, ACC => Foldable.FoldingBehavior[ACC]] = {
-      case sq: SubqueryCall =>
-        acc => SkipChildren(sq.initializations.foldLeft(sq.part.folder.treeFold(acc)(pf))((result, init) => result + createVariableRenaming(init.variable, anonymousVariableNameGenerator)))
+      case sq: SubqueryCall => acc => {
+        val subQueryRenamed = sq.part.folder.treeFold(acc)(pf)
+        val initsRenamed = sq.initializations.foldLeft(subQueryRenamed) { (result, init) =>
+          if(ambiguousNames(init.variable.name)) {
+            result + createVariableRenaming(init.variable, anonymousVariableNameGenerator)
+          } else result
+        }
+        val untilRenamed = sq.test.folder.treeFold(initsRenamed)(pf)
+        SkipChildren(untilRenamed)
+      }
       case i: LogicalVariable if ambiguousNames(i.name) =>
         val renaming = createVariableRenaming(i, anonymousVariableNameGenerator)
         acc => TraverseChildren(acc + renaming)

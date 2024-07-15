@@ -1551,10 +1551,10 @@ case class SubqueryCall(part: QueryPart, initializations: List[Initialization], 
       }
       // Check inner query. Allow it to import from outer scope
       innerChecked <- part.semanticCheckInSubqueryContext(outerStateWithImports.state)
+      _ <- SemanticExpressionCheck.check(Expression.SemanticContext.Results, this.test)
       _ <- returnToOuterScope(outerStateWithImports.state.currentScope)
       // Declare variables that are in output from subquery
       merged <- declareOutputVariablesInOuterScope(innerChecked.state.currentScope.scope)
-      _      <- SemanticExpressionCheck.check(Expression.SemanticContext.Results, this.test)
     } yield {
       val importingWithErrors = outerStateWithImports.errors
 
