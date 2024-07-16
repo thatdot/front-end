@@ -1264,7 +1264,7 @@ sealed trait ProjectionClause extends HorizonClause {
   override def clauseSpecificSemanticCheck: SemanticCheck =
     returnItems.semanticCheck
 
-  override def semanticCheckContinuation(previousScope: Scope, outerScope: Option[Scope] = None): SemanticCheck =
+  override def semanticCheckContinuation(previousScope: Scope, outerScope: Option[Scope] = None): SemanticCheck = {
     SemanticCheck.fromState {
       state: SemanticState =>
         def runChecks(scopeInUse: Scope): SemanticCheck = {
@@ -1372,6 +1372,7 @@ sealed trait ProjectionClause extends HorizonClause {
             check
         }
     }
+  }
 
   /**
    * If you access a previously defined variable in a WITH/RETURN with DISTINCT or aggregation, that is not OK. Example:
@@ -1537,6 +1538,57 @@ case class SubqueryCall(part: QueryPart, initializations: List[Initialization], 
       checkNoCallInTransactionsInsideRegularCall
   }
 
+//  def checkSubquery: SemanticCheck = {
+//    for {
+////      testVar <- SemanticCheck.fromState { s =>
+////        this.test.folder.treeFold(SemanticCheck.setState(s)) {
+////          case v: Variable =>
+////            acc => {
+////              s.currentScope.localSymbol(v.name) match {
+////                case Some(_) => SkipChildren(acc)
+////                case None =>
+////                  s.declareVariable(v, CTAny.covariant) match {
+////                    case Right(s1) =>
+////                      SkipChildren(for {
+////                        _ <- acc
+////                        r <- SemanticCheck.setState(s1)
+////                      } yield r)
+////                  }
+////              }
+////            }
+////        }
+////      }
+////      _ <- debugCheckState("After declare test", testVar)
+//      outerStateWithImports <- part.checkImportingWith
+//      // Create empty scope under root
+//      _ <- SemanticCheck.setState(outerStateWithImports.state.newBaseScope)
+//      _ <- this.initializations.foldSemanticCheck { i =>
+//        SemanticCheck.fromState { s =>
+//          s.declareVariable(i.variable, CTAny.covariant) match {
+//            case Right(s1) => SemanticCheck.setState(s1)
+//          }
+//        }
+//      }
+//      // Check inner query. Allow it to import from outer scope
+//      innerChecked <- part.semanticCheckInSubqueryContext(outerStateWithImports.state)
+//      _ <- SemanticExpressionCheck.check(Expression.SemanticContext.Results, this.test)
+//      _ <- returnToOuterScope(outerStateWithImports.state.currentScope)
+//      // Declare variables that are in output from subquery
+//      merged <- declareOutputVariablesInOuterScope(innerChecked.state.currentScope.scope)
+//    } yield {
+//      println(s"After inner: ${innerChecked.state.currentScope.scope.symbolTable}")
+//      val importingWithErrors = outerStateWithImports.errors
+//
+//      // Avoid double errors if inner has errors
+//      val allErrors = importingWithErrors ++
+//        (if (innerChecked.errors.nonEmpty) innerChecked.errors else merged.errors)
+//
+//      println(s"Errors: $allErrors")
+//
+//      // Keep errors from inner check and from variable declarations
+//      SemanticCheckResult(merged.state, allErrors)
+//    }
+//  }
   def checkSubquery: SemanticCheck = {
     for {
       outerStateWithImports <- part.checkImportingWith
@@ -1550,8 +1602,7 @@ case class SubqueryCall(part: QueryPart, initializations: List[Initialization], 
         }
       }
       // Check inner query. Allow it to import from outer scope
-      innerChecked <- part.semanticCheckInSubqueryContext(outerStateWithImports.state)
-      _ <- SemanticExpressionCheck.check(Expression.SemanticContext.Results, this.test)
+      innerChecked <- part.semanticCheckInSubqueryContext(outerStateWithImports.state, test)
       _ <- returnToOuterScope(outerStateWithImports.state.currentScope)
       // Declare variables that are in output from subquery
       merged <- declareOutputVariablesInOuterScope(innerChecked.state.currentScope.scope)
@@ -1592,7 +1643,12 @@ case class SubqueryCall(part: QueryPart, initializations: List[Initialization], 
 
   private def declareOutputVariablesInOuterScope(rootScope: Scope): SemanticCheck = {
     when(part.isReturning) {
-      val scopeForDeclaringVariables = part.finalScope(rootScope)
+      val scopeForDeclaringVariables =
+        try {
+          part.finalScope(rootScope)
+        } catch {
+          case _: NoSuchElementException => rootScope
+        }
       declareVariables(scopeForDeclaringVariables.symbolTable.values)
     }
   }

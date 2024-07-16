@@ -16,19 +16,10 @@
 package org.opencypher.v9_0.ast
 
 import org.opencypher.v9_0.ast.Union.UnionMapping
-import org.opencypher.v9_0.ast.semantics.Scope
-import org.opencypher.v9_0.ast.semantics.SemanticAnalysisTooling
-import org.opencypher.v9_0.ast.semantics.SemanticCheck
+import org.opencypher.v9_0.ast.semantics.{Scope, SemanticAnalysisTooling, SemanticCheck, SemanticCheckResult, SemanticCheckable, SemanticError, SemanticExpressionCheck, SemanticFeature, SemanticState, Symbol}
 import org.opencypher.v9_0.ast.semantics.SemanticCheck.success
 import org.opencypher.v9_0.ast.semantics.SemanticCheck.when
-import org.opencypher.v9_0.ast.semantics.SemanticCheckResult
-import org.opencypher.v9_0.ast.semantics.SemanticCheckable
-import org.opencypher.v9_0.ast.semantics.SemanticError
-import org.opencypher.v9_0.ast.semantics.SemanticFeature
-import org.opencypher.v9_0.ast.semantics.SemanticState
-import org.opencypher.v9_0.ast.semantics.Symbol
-import org.opencypher.v9_0.expressions.LogicalVariable
-import org.opencypher.v9_0.expressions.Variable
+import org.opencypher.v9_0.expressions.{Expression, LogicalVariable, True, Variable}
 import org.opencypher.v9_0.util.ASTNode
 import org.opencypher.v9_0.util.InputPosition
 import org.opencypher.v9_0.util.SubqueryVariableShadowing
@@ -66,7 +57,7 @@ sealed trait QueryPart extends ASTNode with SemanticCheckable {
    * Semantic check for when this `QueryPart` is in a subquery, and might import
    * variables from the `outer` scope
    */
-  def semanticCheckInSubqueryContext(outer: SemanticState): SemanticCheck
+  def semanticCheckInSubqueryContext(outer: SemanticState, test: Expression): SemanticCheck
 
   /**
    * True if this query part starts with an importing WITH (has incoming arguments)
@@ -153,9 +144,10 @@ case class SingleQuery(clauses: Seq[Clause])(val position: InputPosition) extend
   override def semanticCheck: SemanticCheck =
     semanticCheckAbstract(clauses, checkClauses(_, None))
 
-  override def checkImportingWith: SemanticCheck = importWith.foldSemanticCheck(_.semanticCheck)
+  override def checkImportingWith: SemanticCheck =
+    importWith.foldSemanticCheck(_.semanticCheck)
 
-  override def semanticCheckInSubqueryContext(outer: SemanticState): SemanticCheck = {
+  override def semanticCheckInSubqueryContext(outer: SemanticState, test: Expression): SemanticCheck = {
     def importVariables: SemanticCheck =
       importWith.foldSemanticCheck(wth =>
         wth.semanticCheckContinuation(outer.currentScope.scope, None) chain
@@ -166,7 +158,7 @@ case class SingleQuery(clauses: Seq[Clause])(val position: InputPosition) extend
       checkLeadingFrom(outer) chain
       semanticCheckAbstract(
         clausesExceptLeadingFromAndImportWith,
-        importVariables chain checkClauses(_, Some(outer.currentScope.scope))
+        importVariables chain checkClauses(_, Some(outer.currentScope.scope)) chain SemanticExpressionCheck.check(Expression.SemanticContext.Results, test)
       ) chain
       checkShadowedVariables(outer)
   }
@@ -473,10 +465,10 @@ sealed trait Union extends QueryPart with SemanticAnalysisTooling {
 
   override def isReturning: Boolean = query.isReturning // we assume part has the same value
 
-  def semanticCheckInSubqueryContext(outer: SemanticState): SemanticCheck =
+  def semanticCheckInSubqueryContext(outer: SemanticState, test: Expression): SemanticCheck =
     semanticCheckAbstract(
-      part => part.semanticCheckInSubqueryContext(outer),
-      query => query.semanticCheckInSubqueryContext(outer)
+      part => part.semanticCheckInSubqueryContext(outer, test),
+      query => query.semanticCheckInSubqueryContext(outer, test)
     )
 
   private def defineUnionVariables: SemanticCheck = (state: SemanticState) => {

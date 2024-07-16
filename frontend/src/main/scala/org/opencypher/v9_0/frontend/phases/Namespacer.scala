@@ -106,19 +106,7 @@ case object Namespacer extends Phase[BaseContext, BaseState, BaseState] with Ste
       Ref(variable) -> newVariable
     }
 
-    type ACC = Map[Ref[LogicalVariable], LogicalVariable]
-
-    def pf: PartialFunction[Any, ACC => Foldable.FoldingBehavior[ACC]] = {
-      case sq: SubqueryCall => acc => {
-        val subQueryRenamed = sq.part.folder.treeFold(acc)(pf)
-        val initsRenamed = sq.initializations.foldLeft(subQueryRenamed) { (result, init) =>
-          if(ambiguousNames(init.variable.name)) {
-            result + createVariableRenaming(init.variable, anonymousVariableNameGenerator)
-          } else result
-        }
-        val untilRenamed = sq.test.folder.treeFold(initsRenamed)(pf)
-        SkipChildren(untilRenamed)
-      }
+    statement.folder.treeFold(Map.empty[Ref[LogicalVariable], LogicalVariable]) {
       case i: LogicalVariable if ambiguousNames(i.name) =>
         val renaming = createVariableRenaming(i, anonymousVariableNameGenerator)
         acc => TraverseChildren(acc + renaming)
@@ -130,8 +118,6 @@ case object Namespacer extends Phase[BaseContext, BaseState, BaseState] with Ste
           }
         acc => TraverseChildren(acc ++ renamings)
     }
-
-    statement.folder.treeFold(Map.empty[Ref[LogicalVariable], LogicalVariable])(pf)
   }
 
   def projectUnions: Rewriter = {
