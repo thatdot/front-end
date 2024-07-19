@@ -115,7 +115,7 @@ sealed trait ReadAdministrationCommand extends AdministrationCommand {
       val check = r.semanticCheck
       for {
         closingResult <- check
-        continuationResult <- r.semanticCheckContinuation(closingResult.state.currentScope.scope)
+        continuationResult <- r.semanticCheckContinuation(closingResult.state.currentScope.scope, None)
       } yield {
         semantics.SemanticCheckResult(continuationResult.state, closingResult.errors ++ continuationResult.errors)
       }

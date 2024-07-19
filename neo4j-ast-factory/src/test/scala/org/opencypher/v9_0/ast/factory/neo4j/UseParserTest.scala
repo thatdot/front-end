@@ -34,7 +34,7 @@ class UseParserTest extends JavaccParserAstTestBase[Statement] {
       query(
         subqueryCall(
           Nil,
-          null,
+          trueLiteral,
           use(varFor("neo4j")),
           returnLit(1 -> "y")
         ),
@@ -49,7 +49,7 @@ class UseParserTest extends JavaccParserAstTestBase[Statement] {
         with_(literal(1) as "x"),
         subqueryCall(
           Nil,
-          null,
+          trueLiteral,
           with_(variableReturnItem("x")),
           use(varFor("neo4j")),
           return_(varFor("x") as "y")

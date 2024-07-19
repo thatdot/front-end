@@ -4,14 +4,14 @@
     <parent>
         <groupId>com.thatdot.opencypher</groupId>
         <artifactId>front-end-parent</artifactId>
-        <version>9.2.0</version>
+        <version>9.2.1</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>cypher-macros_2.13</artifactId>
     <packaging>jar</packaging>
-    <version>9.2.0</version>
+    <version>9.2.1</version>
     <name>openCypher Macros</name>
 
     <description>Cypher macros</description>
