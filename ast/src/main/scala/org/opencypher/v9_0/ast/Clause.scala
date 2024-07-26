@@ -1541,8 +1541,11 @@ case class SubqueryCall(part: QueryPart, initializations: List[Initialization], 
   def checkSubquery: SemanticCheck = {
     for {
       outerStateWithImports <- part.checkImportingWith
+      initState <- this.initializations.foldSemanticCheck { i =>
+        SemanticExpressionCheck.check(SemanticContext.Results, i.expression)
+      }
       // Create empty scope under root
-      _ <- SemanticCheck.setState(outerStateWithImports.state.newBaseScope)
+      _ <- SemanticCheck.setState(initState.state.newBaseScope)
       _ <- this.initializations.foldSemanticCheck { i =>
         SemanticCheck.fromState { s =>
           s.declareVariable(i.variable, CTAny.covariant) match {
@@ -1551,11 +1554,12 @@ case class SubqueryCall(part: QueryPart, initializations: List[Initialization], 
         }
       }
       // Check inner query. Allow it to import from outer scope
-      innerChecked <- part.semanticCheckInSubqueryContext(outerStateWithImports.state, test)
-      _ <- returnToOuterScope(outerStateWithImports.state.currentScope)
+      innerChecked <- part.semanticCheckInSubqueryContext(initState.state, test)
+      _ <- returnToOuterScope(initState.state.currentScope)
       // Declare variables that are in output from subquery
       merged <- declareOutputVariablesInOuterScope(innerChecked.state.currentScope.scope)
     } yield {
+
       val importingWithErrors = outerStateWithImports.errors
 
       // Avoid double errors if inner has errors

@@ -4,14 +4,14 @@
     <parent>
         <groupId>com.thatdot.opencypher</groupId>
         <artifactId>front-end-parent</artifactId>
-        <version>9.2.1</version>
+        <version>9.2.2</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
     <artifactId>opencypher-cypher-ast-factory_2.13</artifactId>
     <packaging>jar</packaging>
-    <version>9.2.1</version>
+    <version>9.2.2</version>
     <name>OpenCypher - OpenCypher AST factory</name>
 
     <description>OpenCypher Cypher AST factory</description>

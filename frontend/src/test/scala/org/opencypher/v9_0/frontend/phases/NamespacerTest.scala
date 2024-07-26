@@ -280,6 +280,58 @@ class NamespacerTest extends CypherFunSuite with AstConstructionTestSupport with
     assertRewritten(query, expected , Nil)
   }
 
+  test("WITH WITH WITH") {
+    val query =
+      """
+        |WITH 1 as foo
+        |WITH foo, {
+        |  myProp: foo
+        |} as baz
+        |CALL RECURSIVELY WITH foo1 AS bar UNTIL (bar > 3) {
+        |  RETURN bar + 1 AS bar
+        |}
+        |RETURN bar
+        |""".stripMargin
+
+    val expected =
+      """
+        |WITH 1 as foo
+        |WITH foo, {
+        |  myProp: foo
+        |} as baz
+        |CALL RECURSIVELY WITH foo1 as `  bar@0` UNTIL (`  bar@1` > 3) {
+        |  RETURN `  bar@0` + 1 as `  bar@1`
+        |}
+        |RETURN `  bar@1`
+        |""".stripMargin
+
+    assertRewritten(query, expected , Nil)
+  }
+
+  test("REBINDING") {
+    val query =
+      """
+        |WITH 1 as test
+        |CALL RECURSIVELY WITH test as x, 0 as y UNTIL (y > 2) {
+        |  RETURN x, y + 1 as y
+        |}
+        |WITH 2 as test
+        |RETURN test
+        |""".stripMargin
+
+    val expected =
+      """
+        |WITH 1 as `  test@0`
+        |CALL RECURSIVELY WITH `  test@0` as x, 0 as `  y@1` UNTIL (`  y@2` > 2) {
+        |  RETURN x AS x, `  y@1` + 1 as `  y@2`
+        |}
+        |WITH 2 as `  test@3`
+        |RETURN `  test@3`
+        |""".stripMargin
+
+    assertRewritten(query, expected , Nil)
+  }
+
   override def rewriterPhaseUnderTest: Phase[BaseContext, BaseState, BaseState] = Namespacer
 
   sealed trait Test
