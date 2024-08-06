@@ -159,7 +159,12 @@ case object projectNamedPaths extends Rewriter with StepSequencer.Step with ASTR
                 case With(_, ReturnItems(_, items, _), _, _, _, _, _) => items
               }.getOrElse(Seq[ReturnItem]())
 
-              val (pathReturnItems, nonPathReturnItems) = allReturnItems.partition {
+              val initializersAsReturnItems =
+                subquery.initializations.map(init => AliasedReturnItem.apply(init.variable))
+
+              val allPlusBonus = allReturnItems ++ initializersAsReturnItems
+
+              val (pathReturnItems, nonPathReturnItems) = allPlusBonus.partition {
                 // We can assume all return items are aliased at this point
                 case AliasedReturnItem(v: Variable, _) if acc.paths.keySet.contains(v) => true
                 case _                                                                 => false

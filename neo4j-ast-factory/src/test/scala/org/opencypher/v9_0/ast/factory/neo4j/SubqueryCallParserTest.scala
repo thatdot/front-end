@@ -22,11 +22,11 @@ class SubqueryCallParserTest extends JavaccParserAstTestBase[Clause] {
   implicit private val parser: JavaccRule[Clause] = JavaccRule.Clause
 
   test("CALL { RETURN 1 }") {
-    gives(subqueryCall(Nil, null, return_(literalInt(1).unaliased)))
+    gives(subqueryCall(Nil, trueLiteral, return_(literalInt(1).unaliased)))
   }
 
   test("CALL { CALL { RETURN 1 as a } }") {
-    gives(subqueryCall(Nil, null, subqueryCall(Nil, null, return_(literalInt(1).as("a")))))
+    gives(subqueryCall(Nil, trueLiteral, subqueryCall(Nil, trueLiteral, return_(literalInt(1).as("a")))))
   }
 
   test("CALL { RETURN 1 AS a UNION RETURN 2 AS a }") {
@@ -36,7 +36,7 @@ class SubqueryCallParserTest extends JavaccParserAstTestBase[Clause] {
     )))
   }
 
-  test("CALL RECURSIVELY (init=3)(done) { MATCH (a) WHERE id(a) = init RETURN a.y as init, a.foo as done } ") {
+  test("CALL RECURSIVELY WITH 3 AS init UNTIL (done) { MATCH (a) WHERE id(a) = init RETURN a.y as init, a.foo as done } ") {
     gives(subqueryCall(
       List(Initialization(varFor("init"), literalInt(3))),
       varFor("done"),
@@ -56,6 +56,6 @@ class SubqueryCallParserTest extends JavaccParserAstTestBase[Clause] {
   }
 
   test("CALL { CREATE (n:N) }") {
-    gives(subqueryCall(Nil, null, create(nodePat(Some("n"), Some(labelLeaf("N"))))))
+    gives(subqueryCall(Nil, trueLiteral, create(nodePat(Some("n"), Some(labelLeaf("N"))))))
   }
 }

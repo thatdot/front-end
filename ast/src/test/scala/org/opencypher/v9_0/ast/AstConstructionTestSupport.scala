@@ -573,11 +573,11 @@ trait AstConstructionTestSupport extends CypherTestSupport {
   def subqueryCall(initializations: List[Initialization], test: Expression, cs: Clause*): SubqueryCall =
     SubqueryCall(SingleQuery(cs)(pos), initializations, test, None)(pos)
 
-  def subqueryCall(part: QueryPart, initializations: List[Initialization] = Nil, test: Expression = null): SubqueryCall =
+  def subqueryCall(part: QueryPart, initializations: List[Initialization] = Nil, test: Expression = trueLiteral): SubqueryCall =
     SubqueryCall(part, initializations, test, None)(pos)
 
   def subqueryCallInTransactions(cs: Clause*): SubqueryCall = {
-    val call = subqueryCall(Nil, null, cs: _*)
+    val call = subqueryCall(Nil, trueLiteral, cs: _*)
     call.copy(inTransactionsParameters = Some(inTransactionsParameters(None)))(pos)
   }
 
@@ -585,7 +585,7 @@ trait AstConstructionTestSupport extends CypherTestSupport {
     inTransactionParameters: SubqueryCall.InTransactionsParameters,
     cs: Clause*
   ): SubqueryCall = {
-    val call = subqueryCall(Nil, null, cs: _*)
+    val call = subqueryCall(Nil, trueLiteral, cs: _*)
     call.copy(inTransactionsParameters = Some(inTransactionParameters))(pos)
   }
 

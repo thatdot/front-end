@@ -5,7 +5,7 @@
 
   <groupId>com.thatdot.opencypher</groupId>
   <artifactId>licensing-config</artifactId>
-  <version>9.2.0</version>
+  <version>9.2.2</version>
   <name>openCypher Front End Licensing Configuration</name>
   <description>Config for licensing checks of the front end modules</description>
 

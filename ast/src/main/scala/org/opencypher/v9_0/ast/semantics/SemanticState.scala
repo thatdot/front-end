@@ -280,7 +280,8 @@ case class SemanticState(
 
   def newBaseScope: SemanticState = copy(currentScope = currentScope.root.newChildScope)
 
-  def symbol(name: String): Option[Symbol] = currentScope.symbol(name)
+  def symbol(name: String): Option[Symbol] =
+    currentScope.symbol(name)
 
   def symbolTypes(name: String): TypeSpec = symbol(name).map(_.types).getOrElse(TypeSpec.all)
 
@@ -357,13 +358,14 @@ case class SemanticState(
         }
     }
 
-  def ensureVariableDefined(variable: LogicalVariable): Either[SemanticError, SemanticState] =
+  def ensureVariableDefined(variable: LogicalVariable): Either[SemanticError, SemanticState] = {
     this.symbol(variable.name) match {
       case None =>
         Left(SemanticError(s"Variable `${variable.name}` not defined", variable.position))
       case Some(symbol) =>
         Right(updateVariable(variable, symbol.types, symbol.definition, symbol.uses + SymbolUse(variable)))
     }
+  }
 
   def specifyType(expression: Expression, possibleTypes: TypeSpec): Either[SemanticError, SemanticState] =
     expression match {

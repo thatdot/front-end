@@ -224,6 +224,114 @@ class NamespacerTest extends CypherFunSuite with AstConstructionTestSupport with
     }
   }
 
+  test("should understand recursive variable refs") {
+    val query =
+      """CALL RECURSIVELY WITH 0 as x UNTIL (x > 3) {
+        |  RETURN x + 1 AS x
+        |}
+        |RETURN x
+        |""".stripMargin
+
+    assertRewritten(query, "CALL RECURSIVELY WITH 0 AS `  x@0` UNTIL (`  x@1` > 3) { RETURN `  x@0` + 1 AS `  x@1` } RETURN `  x@1`" , Nil)
+  }
+
+  test("complex rewrites") {
+    val query =
+      """UNWIND [1,2,3] as foo
+        |CALL RECURSIVELY WITH 0 as x UNTIL (y > 3) { WITH foo
+        |  WITH x+1 as x, x as y
+        |  RETURN y + 1 AS x, x as y
+        |}
+        |RETURN x
+        |""".stripMargin
+
+    val expected =
+      """
+        |UNWIND [1,2,3] as foo
+        |CALL RECURSIVELY WITH 0 as `  x@0` UNTIL (`  y@4` > 3) { WITH foo
+        |  WITH `  x@0`+1 as `  x@1`, `  x@0` as `  y@2`
+        |  RETURN `  y@2` + 1 AS `  x@3`, `  x@1` as `  y@4`
+        |}
+        |RETURN `  x@3`
+        |""".stripMargin
+
+    assertRewritten(query, expected , Nil)
+  }
+
+  test("more complex rewrites") {
+    val query =
+      """
+        |CALL RECURSIVELY WITH 0 AS x UNTIL (y > 3) {
+        |  MATCH (y)
+        |  WITH x
+        |  RETURN x+1 AS x, x AS y
+        |} RETURN y
+        |""".stripMargin
+
+    val expected =
+      """
+        |CALL RECURSIVELY WITH 0 AS `  x@1` UNTIL (`  y@3` > 3) {
+        |  MATCH (`  y@0`)
+        |  WITH `  x@1`
+        |  RETURN `  x@1`+1 AS `  x@2`, `  x@1` AS `  y@3`
+        |} RETURN `  y@3`
+        |""".stripMargin
+
+    assertRewritten(query, expected , Nil)
+  }
+
+  test("WITH WITH WITH") {
+    val query =
+      """
+        |WITH 1 as foo
+        |WITH foo, {
+        |  myProp: foo
+        |} as baz
+        |CALL RECURSIVELY WITH foo1 AS bar UNTIL (bar > 3) {
+        |  RETURN bar + 1 AS bar
+        |}
+        |RETURN bar
+        |""".stripMargin
+
+    val expected =
+      """
+        |WITH 1 as foo
+        |WITH foo, {
+        |  myProp: foo
+        |} as baz
+        |CALL RECURSIVELY WITH foo1 as `  bar@0` UNTIL (`  bar@1` > 3) {
+        |  RETURN `  bar@0` + 1 as `  bar@1`
+        |}
+        |RETURN `  bar@1`
+        |""".stripMargin
+
+    assertRewritten(query, expected , Nil)
+  }
+
+  test("REBINDING") {
+    val query =
+      """
+        |WITH 1 as test
+        |CALL RECURSIVELY WITH test as x, 0 as y UNTIL (y > 2) {
+        |  RETURN x, y + 1 as y
+        |}
+        |WITH 2 as test
+        |RETURN test
+        |""".stripMargin
+
+    val expected =
+      """
+        |WITH 1 as `  test@0`
+        |CALL RECURSIVELY WITH `  test@0` as x, 0 as `  y@1` UNTIL (`  y@2` > 2) {
+        |  RETURN x AS x, `  y@1` + 1 as `  y@2`
+        |}
+        |WITH 2 as `  test@3`
+        |RETURN `  test@3`
+        |""".stripMargin
+
+    assertRewritten(query, expected , Nil)
+  }
+
   override def rewriterPhaseUnderTest: Phase[BaseContext, BaseState, BaseState] = Namespacer
 
   sealed trait Test

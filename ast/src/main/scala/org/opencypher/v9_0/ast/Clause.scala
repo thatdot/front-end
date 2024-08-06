@@ -87,18 +87,7 @@ import org.opencypher.v9_0.util.Foldable.SkipChildren
 import org.opencypher.v9_0.util.Foldable.TraverseChildren
 import org.opencypher.v9_0.util.InputPosition
 import org.opencypher.v9_0.util.helpers.StringHelper.RichString
-import org.opencypher.v9_0.util.symbols.CTAny
-import org.opencypher.v9_0.util.symbols.CTBoolean
-import org.opencypher.v9_0.util.symbols.CTDuration
-import org.opencypher.v9_0.util.symbols.CTFloat
-import org.opencypher.v9_0.util.symbols.CTInteger
-import org.opencypher.v9_0.util.symbols.CTList
-import org.opencypher.v9_0.util.symbols.CTMap
-import org.opencypher.v9_0.util.symbols.CTNode
-import org.opencypher.v9_0.util.symbols.CTPath
-import org.opencypher.v9_0.util.symbols.CTRelationship
-import org.opencypher.v9_0.util.symbols.CTString
-import org.opencypher.v9_0.util.symbols.CypherType
+import org.opencypher.v9_0.util.symbols.{CTAny, CTBoolean, CTDuration, CTFloat, CTInteger, CTList, CTMap, CTNode, CTPath, CTRelationship, CTString, CypherType, TypeSpec}
 
 sealed trait Clause extends ASTNode with SemanticCheckable {
   def name: String
@@ -1275,7 +1264,7 @@ sealed trait ProjectionClause extends HorizonClause {
   override def clauseSpecificSemanticCheck: SemanticCheck =
     returnItems.semanticCheck
 
-  override def semanticCheckContinuation(previousScope: Scope, outerScope: Option[Scope] = None): SemanticCheck =
+  override def semanticCheckContinuation(previousScope: Scope, outerScope: Option[Scope] = None): SemanticCheck = {
     SemanticCheck.fromState {
       state: SemanticState =>
         def runChecks(scopeInUse: Scope): SemanticCheck = {
@@ -1383,6 +1372,7 @@ sealed trait ProjectionClause extends HorizonClause {
             check
         }
     }
+  }
 
   /**
    * If you access a previously defined variable in a WITH/RETURN with DISTINCT or aggregation, that is not OK. Example:
@@ -1551,14 +1541,25 @@ case class SubqueryCall(part: QueryPart, initializations: List[Initialization], 
   def checkSubquery: SemanticCheck = {
     for {
       outerStateWithImports <- part.checkImportingWith
+      initState <- this.initializations.foldSemanticCheck { i =>
+        SemanticExpressionCheck.check(SemanticContext.Results, i.expression)
+      }
       // Create empty scope under root
-      _ <- SemanticCheck.setState(outerStateWithImports.state.newBaseScope)
+      _ <- SemanticCheck.setState(initState.state.newBaseScope)
+      _ <- this.initializations.foldSemanticCheck { i =>
+        SemanticCheck.fromState { s =>
+          s.declareVariable(i.variable, CTAny.covariant) match {
+            case Right(s1) => SemanticCheck.setState(s1)
+          }
+        }
+      }
       // Check inner query. Allow it to import from outer scope
-      innerChecked <- part.semanticCheckInSubqueryContext(outerStateWithImports.state)
-      _ <- returnToOuterScope(outerStateWithImports.state.currentScope)
+      innerChecked <- part.semanticCheckInSubqueryContext(initState.state, test)
+      _ <- returnToOuterScope(initState.state.currentScope)
       // Declare variables that are in output from subquery
       merged <- declareOutputVariablesInOuterScope(innerChecked.state.currentScope.scope)
     } yield {
+
       val importingWithErrors = outerStateWithImports.errors
 
       // Avoid double errors if inner has errors

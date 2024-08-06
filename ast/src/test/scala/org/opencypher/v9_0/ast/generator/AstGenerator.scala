@@ -1247,7 +1247,7 @@ class AstGenerator(simpleStrings: Boolean = true, allowedVarNames: Option[Seq[St
   def _subqueryCall: Gen[SubqueryCall] = for {
     part <- _queryPart
     params <- option(_inTransactionsParameters)
-  } yield SubqueryCall(part, Nil, null, params)(pos)
+  } yield SubqueryCall(part, Nil, True()(pos), params)(pos)
 
   def _inTransactionsParameters: Gen[InTransactionsParameters] = for {
     batchSize <- option(_expression)

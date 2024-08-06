@@ -323,7 +323,8 @@ object SemanticExpressionCheck extends SemanticAnalysisTooling {
       case x: Variable =>
         (s: SemanticState) =>
           s.ensureVariableDefined(x) match {
-            case Right(ss) => SemanticCheckResult.success(ss)
+            case Right(ss) =>
+              SemanticCheckResult.success(ss)
             case Left(error) =>
               if (s.declareVariablesToSuppressDuplicateErrors) {
                 // Most of the time we want to suppress if this error occurs again, by declaring the missing variable now
